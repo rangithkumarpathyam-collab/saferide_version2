@@ -1290,7 +1290,7 @@ with right_col:
                 <div class="recent-log-id">{recent['incident_id']}
                     <span class="recent-log-badge {badge_class}">{recent_status}</span>
                 </div>
-                <div class="recent-log-time">{_fmt_time(recent.get('timestamp', ''))}</div>
+                <div class="recent-log-time">{_fmt_time(recent.get('created_at') or recent.get('timestamp', ''))}</div>
                 <div class="recent-log-copy">{recent_copy}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -1323,7 +1323,7 @@ with right_col:
                             <div class="chat-sender" style="color:#f87171;">👤 Rider (Telugu)</div>
                             <div class="chat-original">{msg['original_text']}</div>
                             <div class="chat-translated">🌐 Translation: {trans_display}</div>
-                            <div class="chat-timestamp">{_fmt_time(msg['timestamp'])}</div>
+                            <div class="chat-timestamp">{_fmt_time(msg.get('created_at') or msg.get('timestamp'))}</div>
                         </div>
                     """, unsafe_allow_html=True)
                 elif sender == "Responder":
@@ -1332,7 +1332,7 @@ with right_col:
                             <div class="chat-sender" style="color:#60a5fa;">🏥 Responder (English)</div>
                             <div class="chat-original">{msg['original_text']}</div>
                             <div class="chat-translated">🌐 Telugu Translation: {trans_display}</div>
-                            <div class="chat-timestamp">{_fmt_time(msg['timestamp'])}</div>
+                            <div class="chat-timestamp">{_fmt_time(msg.get('created_at') or msg.get('timestamp'))}</div>
                         </div>
                     """, unsafe_allow_html=True)
                 else:  # System
@@ -1343,7 +1343,7 @@ with right_col:
                         <div style="background:#182234; border:1px dashed #475569; border-radius:8px; padding:8px; margin-bottom:8px; text-align:center;">
                             <div style="font-size:0.75rem; color:#94a3b8;">⚙️ SYSTEM EVENT</div>
                             <div style="font-size:0.85rem; color:#e2e8f0;">{system_text}</div>
-                            <div style="font-size:0.7rem; color:#64748b;">{_fmt_time(msg['timestamp'])}</div>
+                            <div style="font-size:0.7rem; color:#64748b;">{_fmt_time(msg.get('created_at') or msg.get('timestamp'))}</div>
                         </div>
                     """, unsafe_allow_html=True)
 

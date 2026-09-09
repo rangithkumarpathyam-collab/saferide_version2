@@ -85,6 +85,12 @@ CREATE POLICY "Allow public insert messages"
 ON public.incident_messages FOR INSERT 
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow public update messages" ON public.incident_messages;
+CREATE POLICY "Allow public update messages" 
+ON public.incident_messages FOR UPDATE 
+USING (true);
+
+
 DROP POLICY IF EXISTS "Allow public read telemetry" ON public.telemetry_logs;
 CREATE POLICY "Allow public read telemetry" 
 ON public.telemetry_logs FOR SELECT 
