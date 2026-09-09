@@ -13,8 +13,18 @@ Central emergency dispatch dashboard uniting:
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import time
+
+# IST timezone — Render servers run UTC, we always display/store in IST
+IST = timezone(timedelta(hours=5, minutes=30))
+def now_ist_str() -> str:
+    return datetime.now(IST).strftime("%Y-%m-%d %H:%M:%S IST")
+
+def _fmt_time(raw: str) -> str:
+    """Format a stored timestamp string to a clean, IST-labelled display value."""
+    return db.format_timestamp_ist(raw, full=False)
+
 import urllib.parse
 from dotenv import load_dotenv
 
@@ -896,8 +906,9 @@ with left_col:
         st.write(f"**{conf_val}%** ({ad.determine_severity(conf_val)})")
         st.progress(min(1.0, conf_val / 100.0))
     with det_c3:
-        st.write("**Timestamp:**")
-        st.write(f"⏱️ {current_incident['timestamp']}")
+        raw_ts = current_incident.get('timestamp') or current_incident.get('created_at', '')
+        display_ts = db.format_timestamp_ist(raw_ts, full=True)
+        st.write(f"⏱️ {display_ts}")
 
     st.markdown("---")
     
@@ -1279,7 +1290,7 @@ with right_col:
                 <div class="recent-log-id">{recent['incident_id']}
                     <span class="recent-log-badge {badge_class}">{recent_status}</span>
                 </div>
-                <div class="recent-log-time">{recent.get('timestamp', '')[-8:]}</div>
+                <div class="recent-log-time">{_fmt_time(recent.get('timestamp', ''))}</div>
                 <div class="recent-log-copy">{recent_copy}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -1312,7 +1323,7 @@ with right_col:
                             <div class="chat-sender" style="color:#f87171;">👤 Rider (Telugu)</div>
                             <div class="chat-original">{msg['original_text']}</div>
                             <div class="chat-translated">🌐 Translation: {trans_display}</div>
-                            <div class="chat-timestamp">{msg['timestamp']}</div>
+                            <div class="chat-timestamp">{_fmt_time(msg['timestamp'])}</div>
                         </div>
                     """, unsafe_allow_html=True)
                 elif sender == "Responder":
@@ -1321,7 +1332,7 @@ with right_col:
                             <div class="chat-sender" style="color:#60a5fa;">🏥 Responder (English)</div>
                             <div class="chat-original">{msg['original_text']}</div>
                             <div class="chat-translated">🌐 Telugu Translation: {trans_display}</div>
-                            <div class="chat-timestamp">{msg['timestamp']}</div>
+                            <div class="chat-timestamp">{_fmt_time(msg['timestamp'])}</div>
                         </div>
                     """, unsafe_allow_html=True)
                 else:  # System
@@ -1332,7 +1343,7 @@ with right_col:
                         <div style="background:#182234; border:1px dashed #475569; border-radius:8px; padding:8px; margin-bottom:8px; text-align:center;">
                             <div style="font-size:0.75rem; color:#94a3b8;">⚙️ SYSTEM EVENT</div>
                             <div style="font-size:0.85rem; color:#e2e8f0;">{system_text}</div>
-                            <div style="font-size:0.7rem; color:#64748b;">{msg['timestamp']}</div>
+                            <div style="font-size:0.7rem; color:#64748b;">{_fmt_time(msg['timestamp'])}</div>
                         </div>
                     """, unsafe_allow_html=True)
 

@@ -31,8 +31,44 @@ Schema:
 import sqlite3
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Any, Optional
+
+# IST = UTC+5:30 — ensures correct timestamps on Render (UTC) and local dev
+IST = timezone(timedelta(hours=5, minutes=30))
+
+def now_ist() -> datetime:
+    """Returns current datetime in IST (UTC+5:30) — works correctly on Render."""
+    return datetime.now(IST)
+
+def now_ist_str() -> str:
+    """Returns current IST datetime as a formatted string: YYYY-MM-DD HH:MM:SS."""
+    return now_ist().strftime("%Y-%m-%d %H:%M:%S")
+
+def format_timestamp_ist(raw: Any, full: bool = False) -> str:
+    """
+    Parses any timestamp (UTC ISO, standard format, or created_at)
+    and converts it to a clean IST (UTC+5:30) display string.
+    full=False -> '02:49 PM IST'
+    full=True  -> '09 Sep 2026, 02:49:30 PM IST'
+    """
+    if not raw:
+        return ""
+    try:
+        raw_str = str(raw).strip()
+        if "T" in raw_str or "+" in raw_str or raw_str.endswith("Z"):
+            dt = datetime.fromisoformat(raw_str.replace("Z", "+00:00"))
+        else:
+            dt = datetime.fromisoformat(raw_str[:19])
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(IST)
+        if full:
+            return dt.strftime("%d %b %Y, %I:%M:%S %p IST")
+        return dt.strftime("%I:%M %p IST")
+    except Exception:
+        s = str(raw)
+        return s[-8:] if len(s) >= 8 else s
+
 
 # Load local environment variables if available
 try:
@@ -190,10 +226,10 @@ def create_incident(
 ) -> str:
     """Creates a new accident incident record in Supabase & mirrors to SQLite."""
     if not incident_id:
-        incident_id = f"INC-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+        incident_id = f"INC-{now_ist().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
 
     if not timestamp:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        timestamp = now_ist_str()
 
     # 1. Attempt insert to Cloud Supabase
     client = get_supabase_client()
@@ -343,7 +379,7 @@ def add_incident_message(
     db_path: str = DB_FILE
 ) -> int:
     """Appends a message to the communication thread in Supabase and SQLite."""
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ts = now_ist_str()
 
     client = get_supabase_client()
     if client is not None:

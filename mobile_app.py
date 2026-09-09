@@ -1052,11 +1052,17 @@ if st.session_state.mobile_section == "Home":
 elif st.session_state.mobile_section == "Alerts":
     cur_inc = db.get_incident(st.session_state.selected_incident_id) or all_incidents[0]
     
+    inc_formatted_time = db.format_timestamp_ist(cur_inc.get('timestamp') or cur_inc.get('created_at'), full=True)
     st.markdown(
         f"""
         <div style="display:flex; align-items:center; justify-content:space-between; margin:0.4rem 0 0.85rem;">
-            <div style="font-size:1.2rem; font-weight:900; color:#0f172a; letter-spacing:-0.02em;">
-                Incident #{cur_inc['incident_id']}
+            <div>
+                <div style="font-size:1.2rem; font-weight:900; color:#0f172a; letter-spacing:-0.02em;">
+                    Incident #{cur_inc['incident_id']}
+                </div>
+                <div style="font-size:0.75rem; color:#64748b; font-weight:600; margin-top:2px;">
+                    ⏱️ {inc_formatted_time}
+                </div>
             </div>
             <span style="background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:0.72rem; font-weight:800; padding:3px 10px; border-radius:999px;">
                 ● CRITICAL
@@ -1166,14 +1172,24 @@ elif st.session_state.mobile_section == "Alerts":
             st.success("Resolved!")
             st.rerun()
 
-    # Activities Timeline
+    # Activities Timeline (Real-time dynamic incident events in IST)
+    inc_messages = db.get_incident_messages(cur_inc["incident_id"])
+    timeline_items_html = ""
+    if inc_messages:
+        for m in reversed(inc_messages[-4:]):
+            m_time = db.format_timestamp_ist(m.get("timestamp") or m.get("created_at"), full=False)
+            sender_label = m.get("sender", "System")
+            text_preview = (m.get("original_text", "")[:65] + "...") if len(m.get("original_text", "")) > 65 else m.get("original_text", "")
+            timeline_items_html += f'<div style="margin-bottom:8px; color:#334155; font-weight:600;">● {sender_label}: {text_preview} · <span style="color:#64748b; font-weight:500;">{m_time}</span></div>'
+    else:
+        inc_time = db.format_timestamp_ist(cur_inc.get("timestamp") or cur_inc.get("created_at"), full=False)
+        timeline_items_html = f'<div style="margin-bottom:8px; color:#334155; font-weight:600;">● Incident registered · <span style="color:#64748b; font-weight:500;">{inc_time}</span></div>'
+
     st.markdown(
-        """
+        f"""
         <div style="font-size:0.85rem; font-weight:900; color:#0f172a; margin:1.1rem 0 0.5rem; letter-spacing:0.02em;">ACTION TIMELINE</div>
         <div class="glass-card" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:18px; padding:0.9rem 1rem; font-size:0.75rem; box-shadow:0 4px 14px rgba(0,0,0,0.03);">
-            <div style="margin-bottom:8px; color:#334155; font-weight:600;">● Emergency unit 04 dispatched · <span style="color:#64748b; font-weight:500;">14:24:12</span></div>
-            <div style="margin-bottom:8px; color:#334155; font-weight:600;">● Rider confirmed address via Twilio speech · <span style="color:#64748b; font-weight:500;">14:23:45</span></div>
-            <div style="color:#059669; font-weight:700;">● Automated voice alert completed · <span style="color:#64748b; font-weight:500;">14:23:01</span></div>
+            {timeline_items_html}
         </div>
         """,
         unsafe_allow_html=True,
