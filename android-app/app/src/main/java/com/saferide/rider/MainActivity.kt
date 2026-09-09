@@ -118,119 +118,230 @@ class MainActivity : Activity(), SensorEventListener {
     private fun buildScreen(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(44), dp(16), dp(24))
+            setPadding(dp(16), dp(36), dp(16), dp(115))
             minimumHeight = resources.displayMetrics.heightPixels
-            setBackgroundColor(color("#060B14"))
+            setBackgroundColor(color("#F8FAFC"))
         }
 
         val scroll = ScrollView(this).apply {
             isFillViewport = true
-            setBackgroundColor(color("#060B14"))
+            setBackgroundColor(color("#F8FAFC"))
+            overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS
             addView(root, FrameLayout.LayoutParams(-1, -1))
         }
 
-        // --- TOP OPERATOR GLASS HEADER ---
-        val headerCard = glassCard(radius = 20, strokeColor = "#4038BDF8", fillColor = "#1C0F1D38").apply {
+        // --- TOP OPERATOR HEADER (AVATAR + ARMED & LOGGING + DUAL PILLS) ---
+        val headerRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(16), dp(14), dp(16), dp(14))
+            setPadding(dp(2), dp(2), dp(2), dp(14))
         }
 
         val avatar = TextView(this).apply {
-            text = "🏍️"
-            textSize = 24f
+            text = "👤"
+            textSize = 22f
             gravity = Gravity.CENTER
-            background = glassGradientCard("#2563EB", "#0284C7", "#8038BDF8", 16)
-            layoutParams = LinearLayout.LayoutParams(dp(48), dp(48)).apply { marginEnd = dp(14) }
+            background = roundedBackground("#0284C7", 999, "#FFFFFF")
+            elevation = dp(3).toFloat()
+            layoutParams = LinearLayout.LayoutParams(dp(46), dp(46)).apply { marginEnd = dp(12) }
         }
-        headerCard.addView(avatar)
+        headerRow.addView(avatar)
 
         val headerText = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
         }
-        headerText.addView(text("SafeRide AI", 18f, "#F8FAFC", true))
-        headerText.addView(text("Active Protection Mode · Real-Time Guard", 11f, "#38BDF8", false))
-        headerCard.addView(headerText)
-
-        val livePill = LinearLayout(this).apply {
+        headerText.addView(text("SAFERIDE AI", 11f, "#64748B", true).apply { letterSpacing = 0.08f })
+        val armedText = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            background = roundedBackground("#064E3B", 999, "#10B981")
-            setPadding(dp(12), dp(6), dp(12), dp(6))
+            setPadding(0, dp(2), 0, 0)
         }
-        livePill.addView(text("● ARMED", 11f, "#34D399", true))
-        headerCard.addView(livePill)
-        root.addView(headerCard)
+        val armedDot = View(this).apply {
+            background = roundedBackground("#10B981", 999)
+            layoutParams = LinearLayout.LayoutParams(dp(8), dp(8)).apply { marginEnd = dp(6) }
+        }
+        armedText.addView(armedDot)
+        armedText.addView(text("ARMED & LOGGING", 13.5f, "#0F172A", true))
+        headerText.addView(armedText)
+        headerRow.addView(headerText)
 
-        // --- TELEMETRY STATUS CHIP ---
-        val telemetryChip = LinearLayout(this).apply {
+        val pillsStack = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.END
+        }
+        val batteryPill = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            background = roundedBackground("#0C1A2E", 14, "#0284C7")
-            setPadding(dp(14), dp(8), dp(14), dp(8))
-            layoutParams = LinearLayout.LayoutParams(-1, -2).apply {
-                topMargin = dp(12)
-                bottomMargin = dp(4)
-            }
+            gravity = Gravity.CENTER_VERTICAL
+            background = roundedBackground("#FFFFFF", 999, "#E2E8F0")
+            elevation = dp(1).toFloat()
+            setPadding(dp(9), dp(3), dp(9), dp(3))
         }
-        sensorStatusView = text("⚡ SENSORS ARMED  ·  Peak 0.00 G  ·  Tilt 0.0°", 11f, "#38BDF8", true)
-        telemetryChip.addView(sensorStatusView)
-        root.addView(telemetryChip)
+        batteryPill.addView(text("⚡ 94%", 10.5f, "#0F172A", true))
+        pillsStack.addView(batteryPill, LinearLayout.LayoutParams(-2, -2).apply { bottomMargin = dp(4) })
 
-        // --- LIVE RIDE SIGNALS HUD ---
-        root.addView(section("LIVE TELEMETRY HUD"))
-        val hudRow = LinearLayout(this).apply {
+        val rtkPill = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(4), 0, dp(6))
+            gravity = Gravity.CENTER_VERTICAL
+            background = roundedBackground("#FFFFFF", 999, "#E2E8F0")
+            elevation = dp(1).toFloat()
+            setPadding(dp(9), dp(3), dp(9), dp(3))
         }
-        impactView = statTile(hudRow, "PEAK IMPACT", "0.00 G", "#38BDF8")
-        tiltView = statTile(hudRow, "TILT ANGLE", "0.0°", "#F59E0B")
-        speedView = statTile(hudRow, "GPS SPEED", "0 km/h", "#34D399")
-        root.addView(hudRow)
+        rtkPill.addView(text("🛜 RTK GPS", 10.5f, "#0F172A", true))
+        pillsStack.addView(rtkPill)
+        headerRow.addView(pillsStack)
 
-        // --- AI RISK MONITOR GLASS CARD ---
-        root.addView(section("AI CRASH RISK EVALUATION"))
-        val scoreCard = glassCard(radius = 20, strokeColor = "#3538BDF8", fillColor = "#1613233F").apply {
+        root.addView(headerRow)
+
+        // --- HERO AI CONFIDENCE & TELEMETRY NOMINAL CARD (MATCHING REFERENCE IMAGE) ---
+        val scoreCard = glassCard(radius = 28, strokeColor = "#E2E8F0", fillColor = "#FFFFFF").apply {
             gravity = Gravity.CENTER
-            setPadding(dp(18), dp(18), dp(18), dp(18))
+            setPadding(dp(20), dp(18), dp(20), dp(18))
+            elevation = dp(4).toFloat()
         }
-        scoreCard.addView(text("SAFETY CONFIDENCE SCORE", 11f, "#7DD3FC", true))
-
-        confidenceView = text("0%", 56f, "#34D399", true).apply {
+        scoreCard.addView(text("NOMINAL", 13f, "#059669", true).apply {
             gravity = Gravity.CENTER
-            setPadding(0, dp(4), 0, dp(2))
+            letterSpacing = 0.12f
+        })
+
+        confidenceView = text("98%", 56f, "#0F172A", true).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(2), 0, 0)
         }
         scoreCard.addView(confidenceView)
 
-        confidenceBadge = text("🟢 ALL TELEMETRY NOMINAL · RIDE SAFE", 11f, "#34D399", true).apply {
+        scoreCard.addView(text("CONFIDENCE", 11.5f, "#64748B", true).apply {
             gravity = Gravity.CENTER
-            background = roundedBackground("#064E3B", 999, "#10B981")
-            setPadding(dp(16), dp(6), dp(16), dp(6))
-        }
-        scoreCard.addView(confidenceBadge)
-
-        scoreCard.addView(text("Rule-Based Fusion: Accelerometer (3.0G+), Gyro Tilt (65°+) & GPS Speed Drop", 10f, "#94A3B8", false).apply {
-            gravity = Gravity.CENTER
-            setPadding(0, dp(8), 0, dp(4))
+            letterSpacing = 0.08f
+            setPadding(0, 0, 0, dp(12))
         })
 
-        root.addView(scoreCard)
+        confidenceBadge = text("✓ ALL TELEMETRY NOMINAL", 12f, "#047857", true).apply {
+            gravity = Gravity.CENTER
+            background = roundedBackground("#ECFDF5", 999, "#10B981")
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+        }
+        scoreCard.addView(confidenceBadge)
+        root.addView(scoreCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
 
-        // --- LIVE GPS & GIS NAVIGATION CARD ---
-        root.addView(section("LIVE GPS SATELLITE FIX"))
-        val locationCard = glassCard(radius = 18, strokeColor = "#3538BDF8", fillColor = "#160F1D36").apply {
+        // --- 2x2 TELEMETRY METRIC GRID (MATCHING REFERENCE IMAGE) ---
+        val row1 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 0, 0, dp(8))
+        }
+        speedView = createSpeedCard(row1)
+        impactView = createPeakGCard(row1)
+        root.addView(row1)
+
+        val row2 = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, 0, 0, dp(12))
+        }
+        tiltView = createLeanAngleCard(row2)
+        createImpactStateCard(row2)
+        root.addView(row2)
+
+        // --- TELEMETRY STATUS CHIP (HIDDEN/COMPACT SENSOR FEEDBACK) ---
+        sensorStatusView = text("⚡ SENSORS ARMED", 10f, "#0284C7", true).apply {
+            visibility = View.GONE
+        }
+        root.addView(sensorStatusView)
+
+        // --- HIGH PRIORITY EMERGENCY DISPATCH CARD (Scrolls smoothly underneath nav dock) ---
+        val priorityCard = glassCard(radius = 20, strokeColor = "#FCA5A5", fillColor = "#FFFFFF").apply {
             setPadding(dp(16), dp(14), dp(16), dp(14))
+            elevation = dp(3).toFloat()
+        }
+        val pHeader = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        pHeader.addView(text("● HIGH PRIORITY DISPATCH", 11f, "#EF4444", true), LinearLayout.LayoutParams(0, -2, 1f))
+        pHeader.addView(text("TWILIO CLOUD", 9.5f, "#DC2626", true).apply {
+            background = roundedBackground("#FEE2E2", 6, "#FCA5A5")
+            setPadding(dp(8), dp(2), dp(8), dp(2))
+        })
+        priorityCard.addView(pHeader)
+        priorityCard.addView(text("Automated Emergency Voice & Location Dispatch", 13.5f, "#0F172A", true).apply {
+            setPadding(0, dp(4), 0, dp(2))
+        })
+        priorityCard.addView(text("Continuous sensor fusion armed. Automated 10-second voice call dispatch to ${BuildConfig.EMERGENCY_PHONE}.", 11f, "#64748B", false).apply {
+            setPadding(0, 0, 0, dp(10))
+        })
+
+        val sosButton = Button(this).apply {
+            text = "🚨 TRIGGER 10s EMERGENCY SOS"
+            textSize = 13.5f
+            setTextColor(color("#FFFFFF"))
+            setTypeface(null, Typeface.BOLD)
+            background = glassGradientCard("#EF4444", "#DC2626", "#FCA5A5", 14)
+            elevation = dp(2).toFloat()
+            setPadding(0, dp(10), 0, dp(10))
+            setOnClickListener { startSosCountdown(false) }
+        }
+        priorityCard.addView(sosButton, LinearLayout.LayoutParams(-1, dp(48)))
+        root.addView(priorityCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+
+        // --- WOMEN SAFETY EMERGENCY BUTTON (ACTIVATED BY LONG PRESS) ---
+        val womenSafetyCard = glassCard(radius = 20, strokeColor = "#FECDD3", fillColor = "#FFF1F2").apply {
+            setPadding(dp(14), dp(12), dp(14), dp(12))
+            elevation = dp(2).toFloat()
+        }
+        val womenHeader = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        womenHeader.addView(text("🌸 WOMEN SAFETY PROTOCOL", 11f, "#BE185D", true), LinearLayout.LayoutParams(0, -2, 1f))
+        womenHeader.addView(text("● HOLD 2s", 10f, "#E11D48", true))
+        womenSafetyCard.addView(womenHeader)
+
+        val womenSosButton = Button(this).apply {
+            text = "🌸 WOMEN SAFETY SOS (HOLD 2s)"
+            textSize = 14f
+            setTextColor(color("#FFFFFF"))
+            setTypeface(null, Typeface.BOLD)
+            background = glassGradientCard("#F43F5E", "#E11D48", "#FDA4AF", 14)
+            elevation = dp(2).toFloat()
+            isClickable = true
+            isFocusable = true
+            isLongClickable = true
+            setPadding(0, dp(10), 0, dp(10))
+
+            setOnLongClickListener {
+                vibrateOnce(400)
+                executeWomenSafetyDispatch()
+                true
+            }
+
+            setOnClickListener {
+                Toast.makeText(this@MainActivity, "⚠️ WOMEN SAFETY: Press and hold for 2 seconds to activate.", Toast.LENGTH_SHORT).show()
+            }
+        }
+        womenSafetyCard.addView(womenSosButton, LinearLayout.LayoutParams(-1, dp(50)).apply {
+            topMargin = dp(8)
+        })
+
+        val womenNotice = text("🔒 Hold 2s · Instant voice call & SMS to ${BuildConfig.EMERGENCY_PHONE}", 10f, "#9F1239", false).apply {
+            gravity = Gravity.CENTER
+            setPadding(0, dp(6), 0, 0)
+        }
+        womenSafetyCard.addView(womenNotice)
+        root.addView(womenSafetyCard, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
+
+        // --- LIVE GPS SATELLITE FIX CARD ---
+        val locationCard = glassCard(radius = 20, strokeColor = "#E2E8F0", fillColor = "#FFFFFF").apply {
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            elevation = dp(3).toFloat()
         }
         val locHeader = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        locHeader.addView(text("📍 RIDER COORDINATES", 11f, "#38BDF8", true), LinearLayout.LayoutParams(0, -2, 1f))
-        locHeader.addView(text("● GPS ACTIVE", 10f, "#34D399", true))
+        locHeader.addView(text("📍 RIDER COORDINATES", 11f, "#0284C7", true), LinearLayout.LayoutParams(0, -2, 1f))
+        locHeader.addView(text("● GPS ACTIVE", 10f, "#059669", true))
         locationCard.addView(locHeader)
 
-        locationView = text("Acquiring high-accuracy satellite fix...", 13f, "#F1F5F9", true).apply {
+        locationView = text("17.4435° N, 78.3772° E  ·  MG Road", 13f, "#1E293B", true).apply {
             setPadding(0, dp(8), 0, dp(10))
         }
         locationCard.addView(locationView)
@@ -238,114 +349,236 @@ class MainActivity : Activity(), SensorEventListener {
         val mapsBtn = Button(this).apply {
             text = "🗺️ Open Live Google Maps Route"
             textSize = 12f
-            setTextColor(color("#38BDF8"))
+            setTextColor(color("#1D4ED8"))
             setTypeface(null, Typeface.BOLD)
-            background = roundedBackground("#0F2942", 12, "#0284C7")
+            background = roundedBackground("#EFF6FF", 12, "#3B82F6")
             setOnClickListener { openMap() }
         }
         locationCard.addView(mapsBtn, LinearLayout.LayoutParams(-1, dp(44)))
         root.addView(locationCard)
 
-        // --- HERO RED GLASS SOS BUTTON ---
-        val sosButton = Button(this).apply {
-            text = "🚨 SOS — EMERGENCY ASSISTANCE"
-            textSize = 15f
-            setTextColor(color("#FFFFFF"))
-            setTypeface(null, Typeface.BOLD)
-            background = glassGradientCard("#DC2626", "#991B1B", "#FCA5A5", 16)
-            setPadding(0, dp(12), 0, dp(12))
-            setOnClickListener { startSosCountdown(false) }
+        // --- FLOATING UI/UX CONTAINER WITH SCROLLING EFFECT ---
+        val container = FrameLayout(this).apply {
+            setBackgroundColor(color("#F8FAFC"))
         }
-        root.addView(sosButton, LinearLayout.LayoutParams(-1, dp(58)).apply {
-            topMargin = dp(16)
-            bottomMargin = dp(8)
+        container.addView(scroll, FrameLayout.LayoutParams(-1, -1))
+
+        // Floating Capsule Navigation Dock anchored to the bottom
+        val floatingDock = createFloatingNavDock()
+        container.addView(floatingDock, FrameLayout.LayoutParams(-1, -2).apply {
+            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            marginStart = dp(16)
+            marginEnd = dp(16)
+            bottomMargin = dp(18)
         })
 
-        // --- WOMEN SAFETY EMERGENCY BUTTON (ACTIVATED BY LONG PRESS) ---
-        val womenSafetyCard = glassCard(radius = 16, strokeColor = "#60F472B6", fillColor = "#203B0728").apply {
-            setPadding(dp(14), dp(12), dp(14), dp(12))
+        return container
+    }
+
+    private fun createSpeedCard(parent: LinearLayout): TextView {
+        val tile = glassCard(radius = 20, strokeColor = "#E2E8F0", fillColor = "#FFFFFF").apply {
+            elevation = dp(3).toFloat()
+            setPadding(dp(14), dp(14), dp(14), dp(14))
         }
-        val womenHeader = LinearLayout(this).apply {
+        tile.addView(text("⏱ SPEED", 10.5f, "#64748B", true))
+        val valRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        womenHeader.addView(text("🛡️ WOMEN SAFETY PROTOCOL", 11f, "#F472B6", true), LinearLayout.LayoutParams(0, -2, 1f))
-        womenHeader.addView(text("● LONG-PRESS TO ACTIVATE", 10f, "#FDA4AF", true))
-        womenSafetyCard.addView(womenHeader)
-
-        val womenSosButton = Button(this).apply {
-            text = "🌸 WOMEN SAFETY SOS (HOLD 2s)"
-            textSize = 15f
-            setTextColor(color("#FFFFFF"))
-            setTypeface(null, Typeface.BOLD)
-            background = glassGradientCard("#BE185D", "#831843", "#F472B6", 14)
-            isClickable = true
-            isFocusable = true
-            isLongClickable = true
-            setPadding(0, dp(12), 0, dp(12))
-
-            // Standard Android Long-Click: Fires reliably after hold duration (~1-1.5s)
-            setOnLongClickListener {
-                vibrateOnce(400)
-                executeWomenSafetyDispatch()
-                true
-            }
-
-            // Standard Click: Educates rider that long-press is required
-            setOnClickListener {
-                Toast.makeText(this@MainActivity, "⚠️ WOMEN SAFETY: Press and hold for 2 seconds to activate.", Toast.LENGTH_SHORT).show()
-            }
-
-            // Visual press feedback
-            setOnTouchListener { v, event ->
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        v.parent?.requestDisallowInterceptTouchEvent(true)
-                        v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(100).start()
-                        false // Let LongClickListener and ClickListener receive event!
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                        v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
-                        false
-                    }
-                    MotionEvent.ACTION_MOVE -> {
-                        v.parent?.requestDisallowInterceptTouchEvent(true)
-                        false
-                    }
-                    else -> false
-                }
-            }
-        }
-        womenSafetyCard.addView(womenSosButton, LinearLayout.LayoutParams(-1, dp(56)).apply {
-            topMargin = dp(8)
-        })
-
-        val womenNotice = text("🔒 Hold 2s to activate · Immediately dials Twilio emergency voice call & SMS to ${BuildConfig.EMERGENCY_PHONE}", 10f, "#FDA4AF", false).apply {
-            gravity = Gravity.CENTER
+            gravity = Gravity.BOTTOM
             setPadding(0, dp(6), 0, 0)
         }
-        womenSafetyCard.addView(womenNotice)
-        root.addView(womenSafetyCard, LinearLayout.LayoutParams(-1, -2).apply {
-            bottomMargin = dp(10)
-        })
+        val speedVal = text("50", 32f, "#0F172A", true)
+        valRow.addView(speedVal)
+        valRow.addView(text(" km/h", 14f, "#64748B", true).apply { setPadding(dp(2), 0, 0, dp(4)) })
+        tile.addView(valRow)
+        parent.addView(tile, LinearLayout.LayoutParams(0, dp(112), 1f).apply { marginEnd = dp(4) })
+        return speedVal
+    }
 
-        // --- FLOATING GLASS BOTTOM NAVIGATION BAR ---
-        val navCard = glassCard(radius = 999, strokeColor = "#30FFFFFF", fillColor = "#250F172A").apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
-            setPadding(dp(6), dp(6), dp(6), dp(6))
+    private fun createPeakGCard(parent: LinearLayout): TextView {
+        val tile = glassCard(radius = 20, strokeColor = "#E2E8F0", fillColor = "#FFFFFF").apply {
+            elevation = dp(3).toFloat()
+            setPadding(dp(14), dp(14), dp(14), dp(14))
         }
-        navCard.addView(navItem("⌂\nHome", "#38BDF8") { locationView.requestFocus() })
-        navCard.addView(navItem("!\nAlerts", "#94A3B8") { showAlerts() })
-        navCard.addView(navItem("🌸\nWomen", "#F472B6") { executeWomenSafetyDispatch() })
-        navCard.addView(navItem("⌖\nMap", "#94A3B8") { openMap() })
-        navCard.addView(navItem("⚙\nSettings", "#94A3B8") { openSettingsDialog() })
-        root.addView(navCard, LinearLayout.LayoutParams(-1, -2).apply {
-            topMargin = dp(10)
-            bottomMargin = dp(10)
-        })
+        tile.addView(text("ﮩ٨ـ PEAK G-FORCE", 10.5f, "#64748B", true))
+        val valRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.BOTTOM
+            setPadding(0, dp(6), 0, 0)
+        }
+        val gVal = text("1.5", 32f, "#0F172A", true)
+        valRow.addView(gVal)
+        valRow.addView(text(" G", 14f, "#64748B", true).apply { setPadding(dp(2), 0, 0, dp(4)) })
+        tile.addView(valRow)
 
-        return scroll
+        // Horizontal amber progress bar
+        val barTrack = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = roundedBackground("#F1F5F9", 999)
+            layoutParams = LinearLayout.LayoutParams(-1, dp(6)).apply { topMargin = dp(8) }
+        }
+        val amberFill = View(this).apply {
+            background = roundedBackground("#F59E0B", 999)
+            layoutParams = LinearLayout.LayoutParams(0, -1, 0.52f)
+        }
+        val emptyFill = View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(0, -1, 0.48f)
+        }
+        barTrack.addView(amberFill)
+        barTrack.addView(emptyFill)
+        tile.addView(barTrack)
+
+        parent.addView(tile, LinearLayout.LayoutParams(0, dp(112), 1f).apply { marginStart = dp(4) })
+        return gVal
+    }
+
+    private fun createLeanAngleCard(parent: LinearLayout): TextView {
+        val tile = glassCard(radius = 20, strokeColor = "#E2E8F0", fillColor = "#FFFFFF").apply {
+            elevation = dp(3).toFloat()
+            setPadding(dp(14), dp(14), dp(14), dp(14))
+        }
+        tile.addView(text("🧭 LEAN ANGLE", 10.5f, "#64748B", true))
+        val tiltVal = text("26°", 32f, "#0F172A", true).apply {
+            setPadding(0, dp(4), 0, 0)
+        }
+        tile.addView(tiltVal)
+
+        // Horizon slider row (L 45° ---●--- R 45°)
+        val sliderRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(6) }
+        }
+        sliderRow.addView(text("L 45°", 9.5f, "#64748B", true))
+        val track = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(0, dp(12), 1f).apply {
+                marginStart = dp(6)
+                marginEnd = dp(6)
+            }
+        }
+        val line = View(this).apply {
+            background = roundedBackground("#E2E8F0", 999)
+            layoutParams = FrameLayout.LayoutParams(-1, dp(4)).apply { gravity = Gravity.CENTER_VERTICAL }
+        }
+        val dot = View(this).apply {
+            background = roundedBackground("#4F46E5", 999)
+            layoutParams = FrameLayout.LayoutParams(dp(10), dp(10)).apply {
+                gravity = Gravity.CENTER_VERTICAL
+                marginStart = dp(24)
+            }
+        }
+        track.addView(line)
+        track.addView(dot)
+        sliderRow.addView(track)
+        sliderRow.addView(text("R 45°", 9.5f, "#64748B", true))
+        tile.addView(sliderRow)
+
+        parent.addView(tile, LinearLayout.LayoutParams(0, dp(116), 1f).apply { marginEnd = dp(4) })
+        return tiltVal
+    }
+
+    private fun createImpactStateCard(parent: LinearLayout) {
+        val tile = glassCard(radius = 20, strokeColor = "#E2E8F0", fillColor = "#FFFFFF").apply {
+            elevation = dp(3).toFloat()
+            setPadding(dp(14), dp(14), dp(14), dp(14))
+        }
+        tile.addView(text("⚠️ IMPACT STATE", 10.5f, "#64748B", true))
+        val impactVal = text("0.0G", 30f, "#059669", true).apply {
+            setPadding(0, dp(4), 0, 0)
+        }
+        tile.addView(impactVal)
+        tile.addView(text("Threshold safe", 11.5f, "#64748B", false).apply {
+            setPadding(0, dp(2), 0, 0)
+        })
+        parent.addView(tile, LinearLayout.LayoutParams(0, dp(116), 1f).apply { marginStart = dp(4) })
+    }
+
+    private fun createFloatingNavDock(): View {
+        val dock = glassCard(radius = 999, strokeColor = "#E2E8F0", fillColor = "#FFFFFF").apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            elevation = dp(14).toFloat()
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+        }
+
+        // 1. Home Item (with cyan active dot underneath)
+        val homeItem = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
+            setPadding(0, dp(4), 0, dp(2))
+            setOnClickListener { locationView.requestFocus() }
+            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+        }
+        homeItem.addView(text("⌂", 22f, "#0284C7", true).apply { gravity = Gravity.CENTER })
+        val activeDot = View(this).apply {
+            background = roundedBackground("#0284C7", 999)
+            layoutParams = LinearLayout.LayoutParams(dp(5), dp(5)).apply {
+                topMargin = dp(2)
+                gravity = Gravity.CENTER
+            }
+        }
+        homeItem.addView(activeDot)
+        dock.addView(homeItem)
+
+        // 2. Alerts Item
+        val alertsItem = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
+            setPadding(0, dp(4), 0, dp(4))
+            setOnClickListener { showAlerts() }
+            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+        }
+        alertsItem.addView(text("⚠️", 19f, "#64748B", true).apply { gravity = Gravity.CENTER })
+        dock.addView(alertsItem)
+
+        // 3. Center Elevated Glowing Red Circular SOS Button
+        val sosBtn = TextView(this).apply {
+            text = "🛡️"
+            textSize = 22f
+            gravity = Gravity.CENTER
+            background = glassGradientCard("#EF4444", "#E11D48", "#FFFFFF", 999)
+            elevation = dp(8).toFloat()
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { startSosCountdown(false) }
+            layoutParams = LinearLayout.LayoutParams(dp(52), dp(52)).apply {
+                marginStart = dp(4)
+                marginEnd = dp(4)
+                bottomMargin = dp(4)
+            }
+        }
+        dock.addView(sosBtn)
+
+        // 4. Map Item
+        val mapItem = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
+            setPadding(0, dp(4), 0, dp(4))
+            setOnClickListener { openMap() }
+            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+        }
+        mapItem.addView(text("🗺️", 19f, "#64748B", true).apply { gravity = Gravity.CENTER })
+        dock.addView(mapItem)
+
+        // 5. Settings Item
+        val settingsItem = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            isClickable = true
+            isFocusable = true
+            setPadding(0, dp(4), 0, dp(4))
+            setOnClickListener { openSettingsDialog() }
+            layoutParams = LinearLayout.LayoutParams(0, -2, 1f)
+        }
+        settingsItem.addView(text("⚙️", 19f, "#64748B", true).apply { gravity = Gravity.CENTER })
+        dock.addView(settingsItem)
+
+        return dock
     }
 
     private fun simulateAbnormalCrash() {
@@ -457,19 +690,19 @@ class MainActivity : Activity(), SensorEventListener {
         if (isNotNormal) {
             confidenceView.setTextColor(color("#EF4444"))
             confidenceBadge.text = String.format(Locale.US, "🔴 CRASH RISK DETECTED (%.0f%%)", confidence)
-            confidenceBadge.setTextColor(color("#F87171"))
-            confidenceBadge.background = roundedBackground("#450A0A", 999, "#EF4444")
+            confidenceBadge.setTextColor(color("#B91C1C"))
+            confidenceBadge.background = roundedBackground("#FEF2F2", 999, "#EF4444")
         } else if (confidence >= 45f) {
             // Warning zone: elevated readings, monitoring only — no SOS
-            confidenceView.setTextColor(color("#F59E0B"))
+            confidenceView.setTextColor(color("#D97706"))
             confidenceBadge.text = String.format(Locale.US, "🟡 ELEVATED IMPACT (%.0f%%) — MONITORING", confidence)
-            confidenceBadge.setTextColor(color("#FCD34D"))
-            confidenceBadge.background = roundedBackground("#451A03", 999, "#D97706")
+            confidenceBadge.setTextColor(color("#B45309"))
+            confidenceBadge.background = roundedBackground("#FFFBEB", 999, "#F59E0B")
         } else {
-            confidenceView.setTextColor(color("#34D399"))
-            confidenceBadge.text = "🟢 ALL TELEMETRY NOMINAL · RIDE SAFE"
-            confidenceBadge.setTextColor(color("#34D399"))
-            confidenceBadge.background = roundedBackground("#064E3B", 999, "#10B981")
+            confidenceView.setTextColor(color("#059669"))
+            confidenceBadge.text = "✓ ALL TELEMETRY NOMINAL · RIDE SAFE"
+            confidenceBadge.setTextColor(color("#047857"))
+            confidenceBadge.background = roundedBackground("#ECFDF5", 999, "#10B981")
             if (confidence < 15f && peakG < 2.5f && tiltDegrees < 50f) {
                 sosCancelledRecently = false
             }
@@ -488,7 +721,7 @@ class MainActivity : Activity(), SensorEventListener {
         }
     }
 
-    // --- 10-SECOND EMERGENCY DISPATCH MODAL ---
+    // --- 10-SECOND EMERGENCY DISPATCH MODAL (GLASS WHITE UI) ---
     private fun startSosCountdown(isAutomaticCrash: Boolean, triggerScore: Float = 0f) {
         if (sosCountdownTimer != null) return
         activeIncidentId = null
@@ -497,19 +730,21 @@ class MainActivity : Activity(), SensorEventListener {
 
         val dialogView = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
             setPadding(dp(22), dp(24), dp(22), dp(22))
-            background = roundedBackground("#17090D", 20, "#EF4444")
+            background = roundedBackground("#FFFFFF", 24, "#FCA5A5")
+            elevation = dp(12).toFloat()
         }
 
         val badge = TextView(this).apply {
             text = if (isAutomaticCrash) {
-                if (triggerScore > 0f) String.format(Locale.US, "🚨 ABNORMAL SCORE DETECTED (%.0f%%)", triggerScore)
-                else "🚨 ABNORMAL SAFETY TELEMETRY DETECTED"
+                if (triggerScore > 0f) String.format(Locale.US, "🚨 CRASH RISK DETECTED (%.0f%%)", triggerScore)
+                else "🚨 CRASH SENSORS TRIGGERED"
             } else {
                 "🚨 CRITICAL EMERGENCY SOS"
             }
             textSize = 13f
-            setTextColor(color("#F87171"))
+            setTextColor(color("#DC2626"))
             setTypeface(null, Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(4))
@@ -519,7 +754,7 @@ class MainActivity : Activity(), SensorEventListener {
         val headerText = TextView(this).apply {
             text = if (isAutomaticCrash) "AUTOMATIC EMERGENCY SOS ACTIVATED" else "10-SECOND EMERGENCY DISPATCH"
             textSize = 17f
-            setTextColor(color("#FFFFFF"))
+            setTextColor(color("#0F172A"))
             setTypeface(null, Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(6))
@@ -528,12 +763,12 @@ class MainActivity : Activity(), SensorEventListener {
 
         val subText = TextView(this).apply {
             text = if (isAutomaticCrash) {
-                "Safety confidence score is NOT NORMAL! Automated Twilio voice call & location SMS will be dispatched to ${BuildConfig.EMERGENCY_PHONE} in:"
+                "Crash risk threshold exceeded! Automated Twilio voice call & location SMS will be dispatched to ${BuildConfig.EMERGENCY_PHONE} in:"
             } else {
                 "Automated Twilio voice call & location SMS will be dispatched to ${BuildConfig.EMERGENCY_PHONE} in:"
             }
             textSize = 12f
-            setTextColor(color("#CBD5E1"))
+            setTextColor(color("#475569"))
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(10))
         }
@@ -551,7 +786,7 @@ class MainActivity : Activity(), SensorEventListener {
         val secondsLabel = TextView(this).apply {
             text = "SECONDS REMAINING"
             textSize = 11f
-            setTextColor(color("#F87171"))
+            setTextColor(color("#DC2626"))
             setTypeface(null, Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(10))
@@ -570,9 +805,9 @@ class MainActivity : Activity(), SensorEventListener {
         val locationChip = TextView(this).apply {
             text = String.format(Locale.US, "📍 Live GPS: %.5f, %.5f", latitude, longitude)
             textSize = 12f
-            setTextColor(color("#67E8F9"))
+            setTextColor(color("#1D4ED8"))
             gravity = Gravity.CENTER
-            background = roundedBackground("#0F2942", 8, "#0284C7")
+            background = roundedBackground("#EFF6FF", 8, "#3B82F6")
             setPadding(dp(8), dp(6), dp(8), dp(6))
         }
         dialogView.addView(locationChip, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14) })
@@ -582,7 +817,8 @@ class MainActivity : Activity(), SensorEventListener {
             textSize = 14f
             setTextColor(color("#FFFFFF"))
             setTypeface(null, Typeface.BOLD)
-            background = glassGradientCard("#059669", "#047857", "#6EE7B7", 12)
+            background = glassGradientCard("#10B981", "#059669", "#6EE7B7", 12)
+            elevation = dp(2).toFloat()
             setPadding(0, dp(10), 0, dp(10))
             setOnClickListener {
                 sosCountdownTimer?.cancel()
@@ -609,7 +845,8 @@ class MainActivity : Activity(), SensorEventListener {
             textSize = 13f
             setTextColor(color("#FFFFFF"))
             setTypeface(null, Typeface.BOLD)
-            background = glassGradientCard("#DC2626", "#991B1B", "#FCA5A5", 12)
+            background = glassGradientCard("#EF4444", "#DC2626", "#FCA5A5", 12)
+            elevation = dp(2).toFloat()
             setPadding(0, dp(8), 0, dp(8))
             setOnClickListener {
                 sosCountdownTimer?.cancel()
@@ -627,8 +864,8 @@ class MainActivity : Activity(), SensorEventListener {
         val directDialBtn = Button(this).apply {
             text = "📞 DIRECT CALL 108 / AMBULANCE"
             textSize = 12f
-            setTextColor(color("#E2E8F0"))
-            background = roundedBackground("#1E293B", 10, "#475569")
+            setTextColor(color("#334155"))
+            background = roundedBackground("#F1F5F9", 10, "#CBD5E1")
             setOnClickListener {
                 try {
                     val dialIntent = Intent(Intent.ACTION_DIAL, android.net.Uri.parse("tel:${BuildConfig.EMERGENCY_PHONE}"))
@@ -1096,28 +1333,36 @@ class MainActivity : Activity(), SensorEventListener {
             .show()
     }
 
-    // --- GLASSMORPHIC STYLING HELPERS ---
-    private fun statTile(parent: LinearLayout, label: String, initialValue: String, valColorHex: String): TextView {
-        val tile = glassCard(radius = 14, strokeColor = "#2538BDF8", fillColor = "#180F172A").apply {
+    // --- GLASS WHITE UI STYLING HELPERS ---
+    private fun statTile(parent: LinearLayout, label: String, initialValue: String, valColorHex: String, sublabel: String? = null): TextView {
+        val tile = glassCard(radius = 16, strokeColor = "#E2E8F0", fillColor = "#FFFFFF").apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(dp(4), dp(10), dp(4), dp(10))
+            elevation = dp(3).toFloat()
+            setPadding(dp(6), dp(10), dp(6), dp(10))
         }
-        tile.addView(text(label, 9f, "#94A3B8", true).apply { gravity = Gravity.CENTER })
-        val value = text(initialValue, 17f, valColorHex, true).apply {
+        tile.addView(text(label, 9f, "#64748B", true).apply { gravity = Gravity.CENTER })
+        val value = text(initialValue, 18f, valColorHex, true).apply {
             gravity = Gravity.CENTER
             setPadding(0, dp(2), 0, 0)
         }
         tile.addView(value)
-        parent.addView(tile, LinearLayout.LayoutParams(0, dp(68), 1f).apply {
-            marginStart = dp(3)
-            marginEnd = dp(3)
+        if (sublabel != null) {
+            tile.addView(text(sublabel, 8.5f, "#94A3B8", false).apply {
+                gravity = Gravity.CENTER
+                setPadding(0, dp(1), 0, 0)
+            })
+        }
+        parent.addView(tile, LinearLayout.LayoutParams(0, dp(76), 1f).apply {
+            marginStart = dp(4)
+            marginEnd = dp(4)
         })
         return value
     }
 
-    private fun section(value: String): TextView = text(value, 11f, "#7DD3FC", true).apply {
+    private fun section(value: String): TextView = text(value, 11f, "#475569", true).apply {
         setPadding(dp(2), dp(18), 0, dp(6))
+        letterSpacing = 0.05f
     }
 
     private fun glassCard(radius: Int = 16, strokeColor: String = "#30FFFFFF", fillColor: String = "#15132238"): LinearLayout {

@@ -1,11 +1,9 @@
-import com.android.build.gradle.AppExtension
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
-
-import java.util.Properties
 
 val envProperties = Properties().apply {
     val envFile = rootProject.file("../.env")
@@ -51,13 +49,14 @@ android {
     }
 }
 
-kotlin {
-    jvmToolchain(17)
-}
+// kotlin {
+//    jvmToolchain(17)
+// }
 
 val setupAdbReverse = tasks.register<Exec>("setupAdbReverse") {
     description = "Forward host API port 8000 to connected USB device"
-    val adb = (project.extensions.getByName("android") as AppExtension).adbExecutable.absolutePath
+    val adb = project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
+        .sdkComponents.adb.get().asFile.absolutePath
     commandLine(adb, "reverse", "tcp:8000", "tcp:8000")
     isIgnoreExitValue = true
     doLast {

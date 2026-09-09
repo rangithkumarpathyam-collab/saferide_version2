@@ -22,7 +22,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # SafeRide AI Internal Engine Modules
+import importlib
 import database as db
+importlib.reload(db)
 import accident_detection as ad
 import geocoding as geo
 import translation as tr
@@ -426,7 +428,12 @@ if "wa_location_result" not in st.session_state:
 
 
 # --- TOP BRAND HEADER ---
-st.markdown("""
+db_info = db.get_db_status()
+is_cloud_db = db_info.get("is_cloud", False)
+db_chip_label = "⚡ Supabase Cloud" if is_cloud_db else "💾 SQLite Cache"
+db_chip_style = "border-color:rgba(16,185,129,0.4); color:#34d399; background:rgba(16,185,129,0.12);" if is_cloud_db else "border-color:rgba(56,189,248,0.35); color:#7dd3fc; background:rgba(56,189,248,0.1);"
+
+st.markdown(f"""
 <div class="brand-header">
     <div>
         <div class="brand-title">🛡️ SafeRide AI <span style="font-size:0.62rem; vertical-align:middle; background:#27364c; color:#9fb0c7; border-radius:4px; padding:3px 6px; letter-spacing:0;">v2.4-OPS</span></div>
@@ -437,6 +444,7 @@ st.markdown("""
     </div>
 </div>
 <div class="service-chips">
+    <span class="service-chip" style="{db_chip_style}">● {db_chip_label}</span>
     <span class="service-chip">Emergency alerts</span>
     <span class="service-chip">Location tracking</span>
     <span class="service-chip">Rider translation</span>
@@ -456,6 +464,21 @@ if not incidents:
 with st.sidebar:
     st.title("🎛️ Command & Sim")
     st.caption("Responder operations console")
+    
+    if is_cloud_db:
+        st.markdown("""
+        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; padding:6px 10px; font-size:0.75rem; color:#34d399; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <span style="width:7px; height:7px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+            <b>Supabase PostgreSQL</b> &middot; Cloud Live Sync
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div style="background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.25); border-radius:8px; padding:6px 10px; font-size:0.75rem; color:#7dd3fc; margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+            <span style="width:7px; height:7px; border-radius:50%; background:#38bdf8; display:inline-block;"></span>
+            <b>SQLite Cache Active</b> &middot; Supabase Ready
+        </div>
+        """, unsafe_allow_html=True)
     
     # Filter Status
     status_filter = st.selectbox(
@@ -512,11 +535,24 @@ with st.sidebar:
         vehicle_type=sim_vehicle
     )
 
-    score_color = "#ef4444" if sim_result["confidence"] >= 60 else "#10b981"
+    sim_conf = sim_result["confidence"]
+    if sim_conf >= 70.0:
+        score_color = "#ef4444"
+        badge_label = "🔴 CRASH RISK DETECTED"
+    elif sim_conf >= 45.0:
+        score_color = "#f59e0b"
+        badge_label = "🟡 ELEVATED IMPACT — MONITORING"
+    else:
+        score_color = "#10b981"
+        badge_label = "🟢 ALL TELEMETRY NOMINAL"
+
     st.markdown(f"""
-        <div style="background:#111827; border:1px solid #374151; padding:10px; border-radius:8px; margin: 8px 0;">
-            <div style="font-size:0.8rem; color:#9ca3af;">Simulated Confidence Score:</div>
-            <div style="font-size:1.4rem; font-weight:700; color:{score_color};">{sim_result['confidence']}%</div>
+        <div style="background:#111827; border:1px solid #374151; padding:12px; border-radius:10px; margin: 8px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="font-size:0.8rem; color:#9ca3af;">Simulated Confidence Score:</div>
+                <div style="font-size:0.75rem; font-weight:700; color:{score_color};">{badge_label}</div>
+            </div>
+            <div style="font-size:1.5rem; font-weight:800; color:{score_color}; margin:3px 0;">{sim_conf}%</div>
             <div style="font-size:0.8rem; color:#cbd5e1;">Severity: <b>{sim_result['severity']}</b></div>
             <div style="font-size:0.75rem; color:#94a3b8; margin-top:4px;">
                 Speed: {sim_result['scores']['speed_drop_score']} | Impact: {sim_result['scores']['impact_score']} | Tilt: {sim_result['scores']['tilt_score']}
@@ -524,11 +560,17 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
 
-    if sim_result["confidence"] >= 60.0:
+    if sim_conf >= 70.0:
         st.markdown("""
             <div class="high-confidence-alert">
-                🚨 <b>CRITICAL IMPACT THRESHOLD EXCEEDED (≥60%)</b><br>
+                🚨 <b>CRITICAL CRASH RISK THRESHOLD EXCEEDED (≥70%)</b><br>
                 Automatic 10s emergency dispatch countdown armed upon trigger.
+            </div>
+        """, unsafe_allow_html=True)
+    elif sim_conf >= 45.0:
+        st.markdown("""
+            <div style="background:rgba(245, 158, 11, 0.12); border:1px solid rgba(245, 158, 11, 0.45); border-radius:8px; padding:8px 12px; font-size:0.82rem; color:#fcd34d; margin:6px 0;">
+                ⚠️ <b>ELEVATED IMPACT READINGS (45% - 69%)</b> — Telemetry elevated; monitoring active. No automatic SOS.
             </div>
         """, unsafe_allow_html=True)
 
@@ -544,8 +586,8 @@ with st.sidebar:
         sim_geo = geo.reverse_geocode(sim_lat, sim_lng)
         sim_address = sim_geo.get("formatted_address", f"Cyberabad Area ({sim_lat}, {sim_lng})")
 
-        sim_status = "NEED HELP" if (sim_result["accident_detected"] or sim_result["confidence"] >= 60.0) else "I'M OK"
-        sim_message = "బైక్ పడిపోయింది, దయచేసి అంబులెన్స్ పంపండి." if (sim_result["accident_detected"] or sim_result["confidence"] >= 60.0) else "రైడ్ క్షేమంగా ఉంది."
+        sim_status = "NEED HELP" if (sim_result["accident_detected"] or sim_conf >= 70.0) else "I'M OK"
+        sim_message = "బైక్ పడిపోయింది, దయచేసి అంబులెన్స్ పంపండి." if (sim_result["accident_detected"] or sim_conf >= 70.0) else "రైడ్ క్షేమంగా ఉంది."
 
         new_inc_id = db.create_incident(
             vehicle_type=sim_vehicle,
@@ -555,7 +597,7 @@ with st.sidebar:
             rider_status=sim_status,
             language="Telugu",
             message=sim_message,
-            status="REPORTED" if (sim_result["accident_detected"] or sim_result["confidence"] >= 60.0) else "RESOLVED",
+            status="REPORTED" if (sim_result["accident_detected"] or sim_conf >= 70.0) else "RESOLVED",
             address=sim_address
         )
 

@@ -22,7 +22,7 @@ WEIGHT_IMPACT_FORCE = 0.40
 WEIGHT_TILT_ABNORMALITY = 0.25
 
 # Baseline threshold for triggering an accident alert
-ACCIDENT_CONFIDENCE_THRESHOLD = 60.0  # in percent (0 - 100)
+ACCIDENT_CONFIDENCE_THRESHOLD = 70.0  # in percent (0 - 100)
 
 
 def validate_telemetry(
