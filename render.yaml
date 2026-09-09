@@ -1,5 +1,43 @@
 services:
-  # --- SafeRide AI Command Center (Dispatcher Dashboard) ---
+  # ============================================================
+  # Service 1: SafeRide AI FastAPI Backend (REST API for Android)
+  # Android app talks to this service for incident reporting
+  # ============================================================
+  - type: web
+    name: saferide-api
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: GEOAPIFY_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+      - key: EMERGENCY_DISPATCH_PHONE
+        sync: false
+      - key: TRANSLATION_PROVIDER
+        value: deep_translator
+      - key: RENDER_DEPLOYMENT_URL
+        value: https://saferide-version2.onrender.com
+    autoDeploy: true
+
+  # ============================================================
+  # Service 2: SafeRide AI Command Center (Dispatcher Dashboard)
+  # Emergency responder dashboard: http://localhost:8501 -> Render
+  # ============================================================
   - type: web
     name: saferide-command-center
     env: python
@@ -31,7 +69,10 @@ services:
         value: https://saferide-version2.onrender.com
     autoDeploy: true
 
-  # --- SafeRide AI Mobile Companion App ---
+  # ============================================================
+  # Service 3: SafeRide AI Mobile Companion App (Web Mobile UI)
+  # Rider-facing mobile web app: http://localhost:8502 -> Render
+  # ============================================================
   - type: web
     name: saferide-mobile-app
     env: python

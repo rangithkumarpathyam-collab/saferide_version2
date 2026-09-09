@@ -1156,7 +1156,8 @@ class MainActivity : Activity(), SensorEventListener {
                     curLat, curLon, speedKmh + 15f, speedKmh, peakG, tiltDegrees, incidentType, targetPhone
                 )
                 val primaryUrl = getApiBaseUrl()
-                val candidateUrls = listOf(primaryUrl, "http://127.0.0.1:8000", "http://10.5.9.106:8000")
+                // Fallback chain: Render cloud first, then local dev server
+                val candidateUrls = listOf(primaryUrl, "http://127.0.0.1:8000")
                 for (baseUrl in candidateUrls) {
                     try {
                         val connection = URL("$baseUrl/api/v1/incidents").openConnection() as HttpURLConnection
