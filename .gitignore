@@ -1,5 +1,8 @@
-# Environment variables
-.env*
+# Environment variables - NEVER commit
+.env
+.env.*
+.env.local
+.env.production
 
 # SQLite Database
 *.db
@@ -27,3 +30,6 @@ env/
 .gradle/
 local.properties
 build/
+
+# Streamlit secrets (Render uses env vars instead)
+.streamlit/secrets.toml

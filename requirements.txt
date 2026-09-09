@@ -1,11 +1,31 @@
-streamlit>=1.35.0
+# SafeRide AI - Production Requirements for Render Deployment
+# Python 3.11.9 (see runtime.txt)
+
+# Core Web Framework
+streamlit>=1.35.0,<2.0.0
+
+# Data Processing
 pandas>=2.0.0
+
+# HTTP & API
 requests>=2.31.0
+
+# Environment & Config
 python-dotenv>=1.0.0
+
+# Emergency Notifications (Twilio)
 twilio>=9.0.0
+
+# GIS Mapping
 folium>=0.16.0
 streamlit-folium>=0.20.0
+
+# Multilingual Translation
 deep-translator>=1.11.4
+
+# FastAPI (for API endpoints - api.py)
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
+
+# Cloud Database (Supabase PostgreSQL)
 supabase>=2.3.0
